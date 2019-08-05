@@ -1,0 +1,27 @@
+path = "C:\\Users\\jsing20\\OneDrive - Johnson Controls\\ExcludedOrgs"
+
+from pymongo import MongoClient
+import pandas as pd
+import os
+
+os.chdir(path)
+
+#Establishing connection to mi db
+conn_url = 'mongodb://{}:{}@{}/{}?authMechanism=SCRAM-SHA-1'
+
+mi_conn_url = conn_url.format('st_market_int', 'DbMGP0GBiBw2', 'tgl-mongodb11.rctanalytics.com,tgl-mongodb12.rctanalytics.com,tgl-mongodb13.rctanalytics.com','market_intelligence')
+mi_client = MongoClient(mi_conn_url)
+mi_db = mi_client.market_intelligence
+
+#Creating duplicate tmp collection
+tmpdata = list(mi_db.ExcludedOrgs.find())
+mi_db.ExcludedOrgs_tmp.insert_many(tmpdata)
+
+#Reading additional orgs in excludedorgs csv
+df=pd.read_csv('ExcludedOrgs.csv',engine='python')
+df1=df.to_dict('index')
+
+for i in df1:
+    mi_db.ExcludedOrgs_tmp.insert_one(df1[i])
+
+mi_client.close()
